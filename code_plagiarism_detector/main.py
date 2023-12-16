@@ -1,7 +1,6 @@
 import os
 import time
 import tempfile
-import zipfile
 import uvicorn
 
 from fastapi import FastAPI, UploadFile, HTTPException, File, status
@@ -13,7 +12,14 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from code_plagiarism_detector.iterator import CodePlagiarismIterator
 from model import PlagiarismResponse, PlagiarismResult
 from util import save_upload_file
-from config import HOST, PORT, INVALID_ZIP_FILE, CONFIG
+from config import HOST, PORT, CONFIG
+from extractor import (
+    ZipExtractor,
+    RarExtractor,
+    TarGzExtractor,
+    TarXzExtractor,
+    FolderExtractor,
+)
 
 
 app = FastAPI(**CONFIG)
@@ -41,15 +47,25 @@ async def detect_plagiarism(file: UploadFile = File(...)):
         temp_file = os.path.join(temp_dir, file.filename)
         await save_upload_file(file, temp_file)
 
-        try:
-            with zipfile.ZipFile(temp_file, "r") as zip_ref:
-                zip_ref.extractall(temp_dir)
-            os.remove(temp_file)
-        except zipfile.BadZipFile:
+        file_extension = os.path.splitext(temp_file)[1]
+
+        if file_extension == ".zip":
+            extractor = ZipExtractor()
+        elif file_extension == ".rar":
+            extractor = RarExtractor()
+        elif file_extension == ".gz":
+            extractor = TarGzExtractor()
+        elif file_extension == ".xz":
+            extractor = TarXzExtractor()
+        elif os.path.isdir(file.filename):
+            extractor = FolderExtractor()
+        else:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=INVALID_ZIP_FILE,
+                detail="Unsupported file type",
             )
+
+        extractor.extract(temp_file, temp_dir)
 
         detector = CodePlagiarismIterator(temp_dir, verbose=False)
         t0 = time.time()
