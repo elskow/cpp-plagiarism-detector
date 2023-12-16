@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "code-plagiarism-detector"
+version = "0.1.0"
+description = ""
+authors = ["elskow <elskow@outlook.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+nltk = "^3.8.1"
+scikit-learn = "^1.3.2"
+pygments = "^2.17.2"
+pycparser = "^2.21"
+fastapi = "^0.105.0"
+python-multipart = "^0.0.6"
+uvicorn = {extras = ["standard"], version = "^0.24.0.post1"}
+aiofiles = "^23.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
