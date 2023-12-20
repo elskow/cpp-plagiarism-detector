@@ -1,11 +1,11 @@
 import re
 import hashlib
-from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from nltk.util import ngrams
 from pygments import lex
 from pygments.lexers import get_lexer_by_name
 from difflib import SequenceMatcher
+from config import SIMILARITY_THRESHOLD
 
 
 class CodePlagiarismDetector:
@@ -53,16 +53,9 @@ class CodePlagiarismDetector:
 
     @staticmethod
     def _normalize_tokens(tokens: list) -> list:
-        stop_words = set(stopwords.words("english")).union(
-            stopwords.words("indonesian")
-        )
         stemmer = PorterStemmer()
         lemmatizer = WordNetLemmatizer()
-        tokens = [
-            lemmatizer.lemmatize(stemmer.stem(token))
-            for token in tokens
-            if token not in stop_words
-        ]
+        tokens = [lemmatizer.lemmatize(stemmer.stem(token)) for token in tokens]
         return tokens
 
     @staticmethod
@@ -88,12 +81,9 @@ class CodePlagiarismDetector:
 
     @staticmethod
     def _get_plagiarism(similarity: float) -> str:
-        if similarity >= 0.9:
-            return "Plagiarism detected"
-        elif similarity >= 0.8:
-            return "Suspicious"
-        else:
-            return "Plagiarism not detected"
+        for key, value in SIMILARITY_THRESHOLD.items():
+            if similarity >= value:
+                return key
 
     def run(self) -> tuple:
         similarity = self._get_similarity()
@@ -108,6 +98,6 @@ class CodePlagiarismDetector:
 
 if __name__ == "__main__":
     detector = CodePlagiarismDetector(
-        "./example/same_1.cpp", "./example/same_2.cpp", verbose=False
+        "./example/diff_1.cpp", "./example/diff_2.cpp", verbose=False
     )
     print(detector.run())

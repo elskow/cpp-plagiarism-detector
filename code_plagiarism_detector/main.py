@@ -7,12 +7,13 @@ from fastapi import FastAPI, UploadFile, HTTPException, File, status
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from code_plagiarism_detector.iterator import CodePlagiarismIterator
 from model import PlagiarismResponse, PlagiarismResult
 from util import save_upload_file
-from config import HOST, PORT, CONFIG
+from config import HOST, PORT, CONFIG, CLIENT_ORIGIN
 from extractor import (
     ZipExtractor,
     RarExtractor,
@@ -23,6 +24,14 @@ from extractor import (
 
 
 app = FastAPI(**CONFIG)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CLIENT_ORIGIN,
+    allow_credentials=True,
+    allow_methods=["POST", "GET", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -84,8 +93,11 @@ async def detect_plagiarism(file: UploadFile = File(...)):
 
         response = PlagiarismResponse(
             time_elapsed=t1 - t0,
-            total_files=len(results),
-            total_comparisons=len(results) * (len(results) - 1) / 2,
+            total_files=len(
+                dict.fromkeys([result[0][0] for result in results])
+                | dict.fromkeys([result[0][1] for result in results])
+            ),
+            total_comparisons=len(results),
             results=results_data,
         )
 

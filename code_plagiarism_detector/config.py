@@ -12,3 +12,13 @@ CONFIG = {
         "email": "helmyl.work@gmail.com",
     },
 }
+
+CLIENT_ORIGIN = [
+    "http://localhost:8077/",
+]
+
+SIMILARITY_THRESHOLD = {
+    "Plagiarism": 0.9,
+    "Suspicious": 0.4,
+    "Not Detected": 0.0,
+}
